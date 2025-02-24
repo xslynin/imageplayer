@@ -40,8 +40,8 @@ all:
 	$(CC) $(LDFLAGS) -o $(TARGET) built-in.o
 
 cp:
-	rm -rf ~/nfsroot/rootfs/root/proj_imageplayer
-	cp ../proj_imageplayer/ ~/nfsroot/rootfs/root/ -rf
+	rm -rf ~/nfsroot/rootfs/root/imageplayer
+	cp ../imageplayer/ ~/nfsroot/rootfs/root/ -rf
 
 clean:
 	rm -f $(shell find -name "*.o")

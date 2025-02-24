@@ -14,10 +14,10 @@ enum LogLevel{
 //extern LogLevel this_loglevel;
 #define DEBUGMODEL 1
 
-#ifdef DEBUGMODEL
+#if DEBUGMODEL
 #define LOG(level,fmt, ...) do{						\
-						fprintf(stderr,"[" #level "] %s: %s--" fmt "\n" , __func__, __LINE__, ##__VA_ARGS__)				\
-				}while(0)
+						fprintf(stderr,"[" #level "] %s: %d--" fmt "\n" , __func__, __LINE__, ##__VA_ARGS__); \
+					}while(0)
 
 #else
 #define LOG(...) 
