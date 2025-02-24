@@ -1,0 +1,4 @@
+#!/bin/sh
+./imageplayer
+cd ..
+
