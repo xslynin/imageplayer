@@ -12,7 +12,7 @@ int main(){
 		return -1;	
 	}
 	//background_set(WIDTH, HEIGH, 0xffff0000);
-	do_type_handle("./image/test.bmp");
+	do_type_handle("./image/crocodile.png");
 //	munmap((void *)fb_ret.pbuf,fb_ret.fix_info.xres_virtual * fb_ret.fix_info.yres_virtual * fb_ret.fix_info.bits_per_pixel / 8);
 	fb_close(fb_ret);
 	

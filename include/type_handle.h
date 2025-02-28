@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <lib_png.h>
-
+#include <debug.h>
 
 
 

@@ -92,7 +92,45 @@ error:
 	return NULL;
 }
 
+unsigned int * png_header_handle(const char * file_path){
+	unsigned int * bitmap = NULL;
 
+	png_structp png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL); 
+	if (!png_ptr) 
+		return NULL;
+
+	png_infop info_ptr = png_create_info_struct(png_ptr);
+	if (!info_ptr){ 
+		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL); 
+		return NULL; 
+	}
+	png_infop end_info = png_create_info_struct(png_ptr);
+	if (!end_info){ 
+		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL); 
+		return NULL; 
+	}
+	
+	FILE *fp = fopen(file_path, "rb"); 
+	if(!fp){ 
+		return NULL; 
+	}
+
+	png_init_io(png_ptr, fp);
+	
+	int png_transforms = PNG_TRANSFORM_STRIP_ALPHA | PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_SHIFT;
+	png_read_png(png_ptr, info_ptr, png_transforms, NULL);
+
+	//handle the png_ptr to bitmap
+	LOG(DEBUG, "width %lu heigh %lu bitdeep %u", info_ptr->width, info_ptr->height, info_ptr->bit_depth);
+	//bitmap = malloc(info_ptr->width * info_ptr->height *sizeof(unsigned int));
+
+	png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
+
+	/* Close the file */
+	fclose(fp);
+
+	return bitmap;
+}
 
 int do_type_handle(const char * file_path){
 	//handle the file head infomation to confirm which type this image belong
@@ -136,7 +174,12 @@ int do_type_handle(const char * file_path){
 			break;
 		case 3:
 			//png
-			bitmap = lib_png_handle();
+			bitmap = png_header_handle(file_path);
+			//bitmap = lib_png_handle();
+			if(bitmap == NULL)
+				printf("TEST FINISHED");
+			free(bitmap);
+			break;
 		default:
 			perror("Wrong Image Type in this application :)");
 			//display_error_message(err_code);  if design such a function
