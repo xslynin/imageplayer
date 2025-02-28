@@ -18,7 +18,7 @@ static int head_handle(int fd){
 	unsigned char * head_check = NULL;
 	
 	head_check = (unsigned char *)malloc(4 * sizeof(unsigned char));// for jpg's 0xff 0xd8 ... 0xff 0xd9
-	ret = read(fd, head_check, 2);
+	ret = read(fd, head_check, 8);//8 for compatibation of libpng
 	if(ret < 0){
 		perror("head read");
 		goto end;	
@@ -36,6 +36,11 @@ static int head_handle(int fd){
 		}
 		if( (*head_check == 0xff) || (*(head_check + 1) == 0xd9) )
 			return 2;
+	}
+	//if png?
+	//by lib
+	if(!png_sig_cmp(head_check, 0, 8)){
+		return 3;
 	}
 
 end:
@@ -129,6 +134,9 @@ int do_type_handle(const char * file_path){
 //			image_set(bitmap);
 //			free(bitmap);
 			break;
+		case 3:
+			//png
+			bitmap = lib_png_handle();
 		default:
 			perror("Wrong Image Type in this application :)");
 			//display_error_message(err_code);  if design such a function

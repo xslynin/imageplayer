@@ -15,10 +15,10 @@ OBJDUMP	= $(CROSS_COMPILE)objdump
 export AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP
 
 CFLAGS := -Wall -O2 -g
-CFLAGS += -I $(shell pwd)/include -I/opt/libdecode/include
+CFLAGS += -I $(shell pwd)/include -I/opt/libdec/include
 
 LDFLAGS :=
-#LDFLAGS := -ljpeg -lpng -lz -lpthread -L/opt/libdecode/lib
+LDFLAGS := -lpng -lz -L/opt/libdec/lib
 
 export CFLAGS LDFLAGS
 

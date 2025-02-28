@@ -4,6 +4,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <lib_png.h>
+
+
+
+
 
 struct bmp_handler {
 	unsigned int filesize;
