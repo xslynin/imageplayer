@@ -93,6 +93,7 @@ error:
 }
 
 unsigned int * png_header_handle(const char * file_path){
+//	int i,j;
 	unsigned int * bitmap = NULL;
 
 	png_structp png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL); 
@@ -116,13 +117,37 @@ unsigned int * png_header_handle(const char * file_path){
 	}
 
 	png_init_io(png_ptr, fp);
-	
-	int png_transforms = PNG_TRANSFORM_STRIP_ALPHA | PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_SHIFT;
+//	int png_transforms = PNG_TRANSFORM_STRIP_ALPHA | PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_STRIP_16 | PNG_TRANSFORM_SHIFT;
+	int png_transforms = PNG_TRANSFORM_STRIP_ALPHA | PNG_TRANSFORM_EXPAND;
+	//	int png_transforms = PNG_TRANSFORM_EXPAND | PNG_TRANSFORM_SHIFT;
 	png_read_png(png_ptr, info_ptr, png_transforms, NULL);
 
 	//handle the png_ptr to bitmap
-	LOG(DEBUG, "width %lu heigh %lu bitdeep %u", info_ptr->width, info_ptr->height, info_ptr->bit_depth);
+	LOG(DEBUG, "width %lu height %lu bitdeep %u rowbytes %lu bpp %u", info_ptr->width, info_ptr->height, info_ptr->bit_depth,info_ptr->rowbytes, info_ptr->pixel_depth);
 	//bitmap = malloc(info_ptr->width * info_ptr->height *sizeof(unsigned int));
+	
+//	int i ;
+//	for(i = 0; i< 1024*4; i++ ){
+	//	LOG(DEBUG, " %x ", info_ptr->row_pointers[300][1024 * 4]);
+//	}
+	//now we know the row pointer gives no 00 for align
+#if 0	
+	bitmap = (unsigned int *)malloc(info_ptr->height * info_ptr->width * 4);
+	//printf("%ld",(unsigned int)info_ptr->height * info_ptr->width * sizeof(unsigned int));
+	for(i=0;i < info_ptr->height * info_ptr->width;){
+		for(j = 0;j < info_ptr->width;){
+			bitmap[i] =( info_ptr->row_pointers[i % 1024][j*3]<<16)|  (info_ptr->row_pointers[i % 1024][j*3 + 1] <<8)| (info_ptr->row_pointers[i % 1024][j*3 + 2]);
+			//LOG(DEBUG, "0x%x ", bitmap[i]);
+			j++;
+			i++;
+			LOG(DEBUG, "pixel %d ", j);
+		}
+		LOG(DEBUG, "row %d done", i + 1);
+	}
+#endif
+	image_set2((unsigned char **)info_ptr->row_pointers);
+
+
 
 	png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
 
@@ -176,8 +201,11 @@ int do_type_handle(const char * file_path){
 			//png
 			bitmap = png_header_handle(file_path);
 			//bitmap = lib_png_handle();
-			if(bitmap == NULL)
+			if(bitmap == NULL){
 				printf("TEST FINISHED");
+				break;
+			}
+			image_set(bitmap);
 			free(bitmap);
 			break;
 		default:

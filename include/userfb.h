@@ -27,6 +27,7 @@ struct fb_user_info {
 //function in userfb.c
 void background_set(unsigned int width, unsigned int heigh, unsigned int color_argb);
 void image_set(const unsigned int * file);
+void image_set2(unsigned char ** bitmap);
 int fb_open();
 void fb_close(int fd);
 
