@@ -47,6 +47,7 @@ void image_set(const unsigned int * bitmap){
 	for(i = 0; i < IMAGES_HEIGHT * IMAGES_WIDTH; i++){
 			//*copy_pbuf++ = images[i];
 			*copy_pbuf++ = bitmap[i];
+//			printf("0x%x ", bitmap[i]);
 	}	
 #endif
 
@@ -68,36 +69,13 @@ void image_set2(unsigned char ** bitmap){
 	unsigned int * copy_pbuf = pbuf;//this pointer used for move from fb's start to end for image display
 	int i,j;
 
-#if 0 
-	unsigned char * ptr = NULL;
-	fd_img = open(file, O_RDONLY);
-	ptr =(unsigned char *) malloc(1024 * 1024 * 2);
-	printf("%p \n", ptr);
-	ret = read(fd_img, ptr, 1024 * 1024 * 2);
-	printf("---------- %d -------------\n", ret);
-	//maybe this module should belong to file manage module
-	bitmap = core_handle_bmp(ptr);
-#endif
-
-	//printf("TEST");
-#if 0
-	for(i = 0; i < IMAGES_HEIGHT * IMAGES_WIDTH; i++){
-			//*copy_pbuf++ = images[i];
-			*copy_pbuf++ = bitmap[i];
-	}	
-#endif
-
-#if 1
 	for(i = 0; i < IMAGES_HEIGHT; i++){
 		for(j = 0; j < IMAGES_WIDTH;j++){
 			*copy_pbuf++ = (bitmap[i][j*3 + 1] << 16) |(bitmap[i][j*3 + 1] << 8) |(bitmap[i][j*3 + 1]);
-		}	
-		
-		//*copy_pbuf++ = images[i];
-			
+		}		
 	}	
-#endif
 }
+
 //pointer return with two charcter
 //first, could the transfer of pointer consume less ram
 //second, could handle the situation of error,    that is, i can return NULL as a kind of pointer

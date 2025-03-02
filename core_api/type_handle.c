@@ -92,7 +92,69 @@ error:
 	return NULL;
 }
 
-unsigned int * png_header_handle(const char * file_path){
+static unsigned int * jpg_lib_handle(const char * file_path){
+	FILE * infile;
+	JSAMPARRAY buffer;
+	int row_stride,i;
+	unsigned int * bitmap, *ptr;
+	struct jpeg_decompress_struct cinfo;
+	struct jpeg_error_mgr jerr;
+
+	cinfo.err = jpeg_std_error(&jerr);	
+	jpeg_create_decompress(&cinfo);
+	
+	if ((infile = fopen(file_path, "rb")) == NULL) {
+		fprintf(stderr, "can't open %s\n", file_path);
+		exit(1);
+	}
+
+	jpeg_stdio_src(&cinfo, infile);
+	
+	jpeg_read_header(&cinfo, TRUE);
+	
+	jpeg_start_decompress(&cinfo);	
+	LOG(DEBUG, "get image width and height: %u %u %d",cinfo.output_width, cinfo.output_height,cinfo.output_components);
+
+	row_stride = cinfo.output_width * cinfo.output_components;
+	buffer = (*cinfo.mem->alloc_sarray)((j_common_ptr)&cinfo, JPOOL_IMAGE, row_stride, 1);
+
+	bitmap = malloc(cinfo.output_height * cinfo.output_width * sizeof(unsigned int));
+	ptr = bitmap;
+
+	while(cinfo.output_scanline < cinfo.output_height){
+		//LOG(DEBUG, " output lines %u", cinfo.output_scanline);
+		jpeg_read_scanlines(&cinfo, buffer, 1);
+#if 0
+		memcpy(ptr, buffer[0], row_stride);
+		ptr += row_stride;
+#endif
+
+#if 1
+		for(i=0;i<row_stride;){
+			*ptr++ = (buffer[0][i]<<16) | (buffer[0][i+1]<<8) | (buffer[0][i+2]);
+			i += 3;
+		}
+#endif
+	}
+#if 0
+	for(i=0;i<cinfo.output_height;i++){
+		for(j=0;j<row_stride;j++){
+			LOG(DEBUG, "%x %d %d", buffer[i][j], i, j);
+		}
+	}	
+//	LOG(DEBUG, "fault before image set");
+//	image_set2((unsigned char **)buffer);
+//	LOG(DEBUG, "fault after");
+#endif
+	jpeg_finish_decompress(&cinfo);
+
+	fclose(infile);	
+	
+	jpeg_destroy_decompress(&cinfo);
+	return bitmap;
+}
+
+static unsigned int * png_lib_handle(const char * file_path){
 //	int i,j;
 	unsigned int * bitmap = NULL;
 
@@ -124,12 +186,7 @@ unsigned int * png_header_handle(const char * file_path){
 
 	//handle the png_ptr to bitmap
 	LOG(DEBUG, "width %lu height %lu bitdeep %u rowbytes %lu bpp %u", info_ptr->width, info_ptr->height, info_ptr->bit_depth,info_ptr->rowbytes, info_ptr->pixel_depth);
-	//bitmap = malloc(info_ptr->width * info_ptr->height *sizeof(unsigned int));
-	
-//	int i ;
-//	for(i = 0; i< 1024*4; i++ ){
-	//	LOG(DEBUG, " %x ", info_ptr->row_pointers[300][1024 * 4]);
-//	}
+
 	//now we know the row pointer gives no 00 for align
 #if 0	
 	bitmap = (unsigned int *)malloc(info_ptr->height * info_ptr->width * 4);
@@ -175,6 +232,7 @@ int do_type_handle(const char * file_path){
 	/*
 	 1 means bmp image
 	 2 means jpg image
+	 3 means png image
 	 */
 
 	switch(n){
@@ -192,20 +250,13 @@ int do_type_handle(const char * file_path){
 			free(bitmap);
 			break;
 		case 2:
-//			jpg = jpg_header_handle(fd);
-///			bitmap = core_handle_jpg(&jpg);
-//			image_set(bitmap);
-//			free(bitmap);
+			bitmap = jpg_lib_handle(file_path);
+			image_set(bitmap);
+			free(bitmap);
 			break;
 		case 3:
 			//png
-			bitmap = png_header_handle(file_path);
-			//bitmap = lib_png_handle();
-			if(bitmap == NULL){
-				printf("TEST FINISHED");
-				break;
-			}
-			image_set(bitmap);
+			png_lib_handle(file_path);
 			free(bitmap);
 			break;
 		default:
