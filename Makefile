@@ -32,8 +32,8 @@ obj-y += main.o
 
 # 添加顶层目录下的子文件夹（注意目录名后面加一个/）
 obj-y += fbapp/
-obj-y += core_api/
-#obj-y += image_manage/
+obj-y += decoder_api/
+obj-y += file_manager/
 
 all: 
 	make -C ./ -f $(TOPDIR)/Makefile.build
