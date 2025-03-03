@@ -18,7 +18,7 @@ CFLAGS := -Wall -O2 -g
 CFLAGS += -I $(shell pwd)/include -I/opt/libdec/include
 
 LDFLAGS :=
-LDFLAGS := -ljpeg -lpng -lz -L/opt/libdec/lib
+LDFLAGS := -ljpeg -lpng -lz -pthread -L/opt/libdec/lib
 
 export CFLAGS LDFLAGS
 

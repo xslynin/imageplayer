@@ -1,0 +1,21 @@
+this file is just a example to tell myself when i gonna write temp decoder cache in binary file to decrease the cpu pressure on image decompress
+
+then such a file was created:
+1, file name should be fixed with dot and "tmp_" and hashname,such as:
+	".tmp_sadioau3434coids"
+The hash table servers the file manage to check if there has exited a cache file for certain images
+
+2, our algorithm should read "sadioau3434coids" and sold out an index in hash table array
+
+3, compare the image's timestamp and the cache file's timestamp, once the image is earlier, load the cache rather decompress the image for a moment
+
+4, however, if the cache is earlier, decompress the image file again and override the origin cache file
+
+OK, till 3.3    that's all
+
+some supplyment:
+
+1, all the images in ../image/ should be decompress or verify the exist cache file before display on fb 
+
+2, the cache file maps the display hardware on my device, so they are both handled to meet 1024x600, no matter how many resolution the origin image file is.
+SO EVERY CACHE FILE IS ABOUT 1.76MB
