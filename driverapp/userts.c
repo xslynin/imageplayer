@@ -64,25 +64,34 @@ int ts_routine(int fd){
 	//end at type 3 code 24 value 0
 	//abort those type don't equals 3
 	int res = 0;
-	struct input_event ev;
+	struct input_event ev[3];
 	struct ts_data ts = {0};
 	while(1){
 		
-		memset(&ev, '\0', sizeof(struct input_event));
-		if(read(fd, &ev, sizeof(struct input_event)) < 0){
+		memset(ev, '\0', 3 * sizeof(struct input_event));
+		if(read(fd, ev, 3 * sizeof(struct input_event)) < 0){
 			perror("Read");
 			break;
 		}
-		if(ev.type == 3){
-			if(ev.code == 0 && !(ts.cond & TS_XMASKCOND) && ev.value){
+		
+		//first for x axis
+		ts.x = ev[0].value;
+		ts.y = ev[1].value;
+		if( (ev[2].type == 1) && (ev[2].code == 330) && (ev[2].value == 1) ){
+			res = ts_app(ts);
+			break;
+		}
+#if 0
+		if(ev.type == 3 && ev.value > 0){
+			if(ev.code == 0 && !(ts.cond & TS_XMASKCOND)){
 				//x axis
 				ts.x = ev.value;
 				ts.cond = ts.cond ^ TS_XMASKCOND;
-			}else if(ev.code == 1 && !(ts.cond & TS_YMASKCOND) && ev.value){
+			}else if(ev.code == 1 && !(ts.cond & TS_YMASKCOND)){
 				//y axis
 				ts.y = ev.value;
 				ts.cond = ts.cond ^ TS_YMASKCOND;
-			}else if(ev.code == 24 && ev.value == 0){
+			}else if(ev.code == 24){
 				ts.cond = 0x3;//bit 1 bit 0 set to 1 for caculate
 			//	break;
 			}
@@ -97,7 +106,7 @@ int ts_routine(int fd){
 				
 			//res = ts_app(ts);
 		}
-			
+#endif	
 	}
 
 	return res;

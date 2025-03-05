@@ -43,6 +43,7 @@ struct img_file * fmanage_init(const char * dir_path){
 		memset(ret, 0, sizeof(xxxhandle));
 #endif
 		if(entry->d_name[0] != '.'){
+			LOG(DEBUG, "%s", entry->d_name);
 			memcpy(sets->f_name,entry->d_name, 256);
 			sets->next = malloc(sizeof(struct img_file));
 			sets->next->pre = sets;

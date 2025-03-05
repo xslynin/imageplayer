@@ -20,7 +20,7 @@
 int main(){
 	int fb_ret, fd_ts, ret;
 	struct img_file * img_file;
-//	struct input_event ev;
+	struct input_event ev;
 
 	//separate the thread pool to child progress
 
@@ -42,7 +42,7 @@ int main(){
 		return -1;
 	}
 #endif
-
+#if 1
 	fd_ts = open("/dev/input/event1", O_RDONLY);
 	if(fd_ts < 0){
 		perror("open ts device");
@@ -77,8 +77,8 @@ int main(){
 			LOG(DEBUG, "CLOSE");
 			break;
 		}
-
 	}
+#endif
 	//free all the resource 
 	//parent progress infinite the loop to handle the touch event
 #if 0
