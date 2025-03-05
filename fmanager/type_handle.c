@@ -102,7 +102,7 @@ static unsigned int * jpg_lib_handle(const char * file_path){
 
 	cinfo.err = jpeg_std_error(&jerr);	
 	jpeg_create_decompress(&cinfo);
-	
+
 	if ((infile = fopen(file_path, "rb")) == NULL) {
 		fprintf(stderr, "can't open %s\n", file_path);
 		exit(1);
@@ -221,7 +221,12 @@ int do_type_handle(const char * file_path){
 	struct bmp_handler * bmp = NULL;
 	//struct jpg_handler * jpg = NULL;
 	//open image file
-	fd = open(file_path, O_RDONLY);
+	char * path =malloc(256 * sizeof(char));
+	memset(path, '\0', 256);
+	strcat(path, "./image/");
+	strcat(path, file_path);	
+	LOG(DEBUG, "%s", path);
+	fd = open(path, O_RDONLY);
 	if(fd < 0){
 		perror("FILE OPEN WRONG!");
 		return -1;
@@ -250,20 +255,22 @@ int do_type_handle(const char * file_path){
 			free(bitmap);
 			break;
 		case 2:
-			bitmap = jpg_lib_handle(file_path);
+			bitmap = jpg_lib_handle(path);
 			image_set(bitmap);
 			free(bitmap);
 			break;
 		case 3:
 			//png
-			png_lib_handle(file_path);
+			png_lib_handle(path);
 			free(bitmap);
 			break;
 		default:
 			perror("Wrong Image Type in this application :)");
+			free(path);
 			//display_error_message(err_code);  if design such a function
 			return -1;
 	}
+	free(path);
 	return 0;
 }
 

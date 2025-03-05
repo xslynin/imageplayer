@@ -45,45 +45,60 @@
 
 
 #include <userts.h>
-static void ts_app(struct ts_data ts){
+static int ts_app(struct ts_data ts){
 	//emmmm, maybe y is not important
-	ififififififififififif
-
-	
+	if(ts.x <= 300){
+		return TS_LEFT;
+	}else if(ts.x >=800){
+		return TS_RIGHT;
+	}else{
+		if(ts.y > 500){
+			return TS_CLOSE;
+		}
+	}
+	return TS_IGNORE;
 }
 
-void *ts_routine(int fd){
+int ts_routine(int fd){
 	//handle only the type 3 code 0/1 
 	//end at type 3 code 24 value 0
 	//abort those type don't equals 3
+	int res = 0;
 	struct input_event ev;
-	struct ts_data ts;
+	struct ts_data ts = {0};
 	while(1){
+		
 		memset(&ev, '\0', sizeof(struct input_event));
 		if(read(fd, &ev, sizeof(struct input_event)) < 0){
 			perror("Read");
 			break;
 		}
 		if(ev.type == 3){
-			if(ev.code == 0 && (ts.cond & TS_XMASKCOND)){
+			if(ev.code == 0 && !(ts.cond & TS_XMASKCOND) && ev.value){
 				//x axis
 				ts.x = ev.value;
 				ts.cond = ts.cond ^ TS_XMASKCOND;
-			}else if(ev.code == 1 && (ts.cond & TS_YMASKCOND)){
+			}else if(ev.code == 1 && !(ts.cond & TS_YMASKCOND) && ev.value){
 				//y axis
 				ts.y = ev.value;
 				ts.cond = ts.cond ^ TS_YMASKCOND;
 			}else if(ev.code == 24 && ev.value == 0){
 				ts.cond = 0x3;//bit 1 bit 0 set to 1 for caculate
-				break;
+			//	break;
 			}
 			
 			//handle happened when x y is fine but before the code 24
-			if((ts.cond ^ 0x3 )== 0x3)
-				ts_app(ts);
+			if(ts.cond == 0x3){
+				LOG(DEBUG, "x :%d y :%d",ts.x, ts.y);
+				res = ts_app(ts);
+				memset(&ts, 0, sizeof(struct ts_data));
+				break;
+			}
+				
+			//res = ts_app(ts);
 		}
 			
 	}
 
-	return NULL;
+	return res;
 }

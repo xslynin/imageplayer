@@ -31,9 +31,9 @@ TARGET := imageplayer
 obj-y += main.o
 
 # 添加顶层目录下的子文件夹（注意目录名后面加一个/）
-obj-y += fbapp/
-obj-y += decoder_api/
-obj-y += file_manager/
+obj-y += driverapp/
+obj-y += decoder/
+obj-y += fmanager/
 
 all: 
 	make -C ./ -f $(TOPDIR)/Makefile.build

@@ -7,6 +7,7 @@
 #include <lib_png.h>
 #include <debug.h>
 #include <jpeglib.h>
+#include <string.h>
 
 
 
