@@ -4,7 +4,7 @@
 #include <userfb.h>
 #include <debug.h>
 #include <userts.h>
-#include <imageloop.h>
+#include <img_manage.h>
 //let's do a complete conclusion
 //first, we initate a thread pool for image decompress assignment and till now we don't actually ensure the need of process, but at lease we realize some threads
 //second, fb should open, return the related resource to control
@@ -17,45 +17,79 @@
 //
 //
 
-int main(){
-	int fb_ret, fd_ts, ret;
-	struct img_file * img_file;
-	struct input_event ev;
 
+#define FB_DF "/dev/fb0"
+#define TS_DF "/dev/input/event1"
+#define IMG_ROOT "./image"
+
+int main(){
+	int ret, fd;
+	FILE_LIST * img_filelist;
+	FB_HANDLER * fb;
+	
+	ret = 0;
 	//separate the thread pool to child progress
 
 	if(thread_pool_init() ){
 		printf("init thread pool wrong!:( \n");
-		return -1;
-		while(1);
+		ret = -1;
+		goto err_thread_pool;;
 	}	
 	
 	//fb and touch should be parent progress
-	fb_ret = fb_open();
-	if(fb_ret < 0){
+	fd = open(FB_DF,O_RDWR);
+	if(fd < 0)
 		perror("open fb device");
-		return -1;	
+	fb = fb_init(fd);
+	if(!fb){
+		perror("fb_init ");
+		goto err_fb;
 	}
+
 #if 0
 	if(ts_init()){
 		printf("initate the touchscreen wrong!:( \n");
 		return -1;
-	}
 #endif
-#if 1
-	fd_ts = open("/dev/input/event1", O_RDONLY);
-	if(fd_ts < 0){
+
+
+#if 0
+	struct input_event ev;
+	fd = open("/dev/input/event1", O_RDONLY);
+	if(fd < 0){
 		perror("open ts device");
 		return 1;
 	}
-	//initation
-	img_file = fmanage_init("./image");
+	while(1){
+		memset(&ev, 0, sizeof(struct input_event));
+		ret = read(fd, &ev, sizeof(struct input_event));
+		LOG(DEBUG, "type %hd code %hd value:%d", ev.type, ev.code, ev.value);
+	}
+//	close(fd_ts);
+#endif
 
+
+
+
+#if 1
+	fd = open(TS_DF, O_RDONLY);
+	if(fd < 0){
+		perror("open ts device");
+		goto err_ts;
+	}
+	//initation
+	img_filelist = fmanage_init(IMG_ROOT);
+	if(!img_filelist){
+		perror("fmanager module error");
+		goto err_fmanage;
+	}
+	
+	struct img_file * cp = img_filelist->head;
 	while(1){
 //		display current image linklist points to
 		
-		do_type_handle(img_file->f_name);
-		LOG(DEBUG, "%s", img_file->f_name);
+//		do_type_handle(img_file->f_name);
+		LOG(DEBUG, "%s", cp->f_name);
 #if 0
 		//		fresh the double buffer for two direction
 		listening the touch screen for img change
@@ -66,39 +100,44 @@ int main(){
 
 		elif close ... break;
 #endif
-		ret = ts_routine(fd_ts);
+		ret = ts_routine(fd);
 		if(ret == TS_LEFT){
 			LOG(DEBUG, "left");
-			img_file = img_file->pre;
+			cp = cp->pre;
 		}else if(ret == TS_RIGHT){
 			LOG(DEBUG, "right");
-			img_file = img_file->next;
+			cp = cp->next;
 		}else if(ret == TS_CLOSE){
 			LOG(DEBUG, "CLOSE");
 			break;
 		}
+		//LOG(DEBUG, "-----------a click");
 	}
 #endif
 	//free all the resource 
 	//parent progress infinite the loop to handle the touch event
-#if 0
-	fd_ts = open("/dev/input/event1", O_RDONLY);
-	if(fd_ts < 0){
-		perror("open ts device");
-		return 1;
-	}
-	while(1){
-		memset(&ev, 0, sizeof(struct input_event));
-		ret = read(fd_ts, &ev, sizeof(struct input_event));
-		LOG(DEBUG, "type %hd code %hd value:%d", ev.type, ev.code, ev.value);
-	}
-//	close(fd_ts);
-#endif
-//	do_type_handle("./image/Cheetahs.jpg");
-//	munmap((void *)fb_ret.pbuf,fb_ret.fix_info.xres_virtual * fb_ret.fix_info.yres_virtual * fb_ret.fix_info.bits_per_pixel / 8);
-	close(fd_ts);	
-	
-	fb_close(fb_ret);
+
+
+
+//ERROR handle for reflection
+err_fmanage:
+	fm_free(img_filelist);
+err_ts:
+	close(fd);	
+err_fb:
+	fb_free(fb);
+err_thread_pool:	
 	thread_pool_destroy();
-	return 0;
+
+	
+	
+	return ret;
+
 }
+
+
+
+
+
+
+

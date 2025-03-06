@@ -202,7 +202,7 @@ static unsigned int * png_lib_handle(const char * file_path){
 		LOG(DEBUG, "row %d done", i + 1);
 	}
 #endif
-	image_set2((unsigned char **)info_ptr->row_pointers);
+	//image_set2((unsigned char **)info_ptr->row_pointers);
 
 
 
@@ -214,18 +214,20 @@ static unsigned int * png_lib_handle(const char * file_path){
 	return bitmap;
 }
 
-int do_type_handle(const char * file_path){
+int do_type_handle(char * name){
 	//handle the file head infomation to confirm which type this image belong
 	int n, fd;
+#if 0
 	unsigned int *bitmap = NULL;
 	struct bmp_handler * bmp = NULL;
 	//struct jpg_handler * jpg = NULL;
+#endif
 	//open image file
 	char * path =malloc(256 * sizeof(char));
 	memset(path, '\0', 256);
 	strcat(path, "./image/");
-	strcat(path, file_path);	
-	LOG(DEBUG, "%s", path);
+	strcat(path, name);	
+//	LOG(DEBUG, "%s", path);
 	fd = open(path, O_RDONLY);
 	if(fd < 0){
 		perror("FILE OPEN WRONG!");
@@ -233,13 +235,15 @@ int do_type_handle(const char * file_path){
 	}
 	
 	n = head_handle(fd);
-	lseek(fd, 0, SEEK_SET);
+	
+	return n;
+//	lseek(fd, 0, SEEK_SET);
 	/*
 	 1 means bmp image
 	 2 means jpg image
 	 3 means png image
 	 */
-
+#if 0
 	switch(n){
 		case 1:
 	//well , there I come up to a sense that this function call a special image decode function, so what should hanpen?	
@@ -270,8 +274,7 @@ int do_type_handle(const char * file_path){
 			//display_error_message(err_code);  if design such a function
 			return -1;
 	}
-	free(path);
-	return 0;
+#endif
 }
 
 

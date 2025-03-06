@@ -25,6 +25,6 @@ struct bmp_handler {
 #include <userfb.h>
 
 
-int do_type_handle(const char * file_path);
+int do_type_handle(char * name);
 
 #endif

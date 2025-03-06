@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <debug.h>
+//#include <list.h>
 
 #define MAX_TASK 10
 #define MAX_THREAD 4

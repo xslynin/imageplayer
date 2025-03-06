@@ -1,12 +1,8 @@
 #include <userfb.h>
 
-#include <test.h> // test for display a image by the way of array bitmap
 
-struct fb_fix_screeninfo fix_info;
-struct fb_var_screeninfo v_info;
-unsigned int * pbuf;	//locate certain pixel
-unsigned long len;
-
+//test for fb use
+#if 0 
 //actually, the smem len include many other sfr 
 void background_set(unsigned int width, unsigned int heigh, unsigned int color_argb){
 	unsigned int i, j;
@@ -16,6 +12,8 @@ void background_set(unsigned int width, unsigned int heigh, unsigned int color_a
 		}
 	}
 }
+#endif
+
 
 // this function is based fb image show for a general use
 // so, this function will lead to another core api for image handle
@@ -25,121 +23,115 @@ void background_set(unsigned int width, unsigned int heigh, unsigned int color_a
 // 2.24  after bmp decoder's finish, the frame of my work is clear
 // image_set only need to be called with the bitmap to display
 // the key is to fill pbuf
-void image_set(const unsigned int * bitmap){
+void image_set(FB_HANDLER * fb, const unsigned int * bitmap){
 	//however, now I only want to display one image
 	//now, let's consider a array with image infomation	
-	unsigned int * copy_pbuf = pbuf;//this pointer used for move from fb's start to end for image display
+	unsigned int * copy_pbuf = fb->pbuf;//this pointer used for move from fb's start to end for image display
 	int i;
 
-#if 0 
-	unsigned char * ptr = NULL;
-	fd_img = open(file, O_RDONLY);
-	ptr =(unsigned char *) malloc(1024 * 1024 * 2);
-	printf("%p \n", ptr);
-	ret = read(fd_img, ptr, 1024 * 1024 * 2);
-	printf("---------- %d -------------\n", ret);
-	//maybe this module should belong to file manage module
-	bitmap = core_handle_bmp(ptr);
-#endif
-
-	//printf("TEST");
 #if 1
-	for(i = 0; i < IMAGES_HEIGHT * IMAGES_WIDTH; i++){
+	for(i = 0; i < IMAGES_HEIGH * IMAGES_WIDTH; i++){
 			//*copy_pbuf++ = images[i];
 			*copy_pbuf++ = bitmap[i];
 //			printf("0x%x ", bitmap[i]);
 	}	
 #endif
-
-#if 0
-	for(i = 0; i < IMAGES_HEIGHT; i++){
-		for(j = 0; j < IMAGES_WIDTH;j++){
-			*copy_pbuf++ = bitmap[i][j];
-		}	
-		
-		//*copy_pbuf++ = images[i];
-			
-	}	
-#endif
+	
+	//fill the double buffer
+	//...
+	
 }
 
-void image_set2(unsigned char ** bitmap){
+void image_set2(FB_HANDLER * fb, unsigned char ** bitmap){
 	//however, now I only want to display one image
 	//now, let's consider a array with image infomation	
-	unsigned int * copy_pbuf = pbuf;//this pointer used for move from fb's start to end for image display
+	unsigned int * copy_pbuf = fb->pbuf;//this pointer used for move from fb's start to end for image display
 	int i,j;
 
-	for(i = 0; i < IMAGES_HEIGHT; i++){
+	for(i = 0; i < IMAGES_HEIGH; i++){
 		for(j = 0; j < IMAGES_WIDTH;j++){
 			*copy_pbuf++ = (bitmap[i][j*3 + 1] << 16) |(bitmap[i][j*3 + 1] << 8) |(bitmap[i][j*3 + 1]);
 		}		
 	}	
+	//fill the double buffer
+	//...
+	
 }
 
 //pointer return with two charcter
 //first, could the transfer of pointer consume less ram
 //second, could handle the situation of error,    that is, i can return NULL as a kind of pointer
-int fb_open(){
-	int fd, ret;
+//err handle leave for main 
+FB_HANDLER * fb_init(int fd){
+	int ret;
 	//struct fb_user_info fb_info_ret;
-
-	fd = open(FBDEVICE, O_RDWR);
-	if(fd < 0){
-		perror("open fb device");
-		goto end;
+	FB_HANDLER * fb = (FB_HANDLER *) malloc(sizeof(FB_HANDLER));
+	if(!fb){
+//		perror("Alloc framebuffer handler fail!");
+		return NULL;
 	}
-	printf("open done!\n");
+	fb->io_entry = fd;
+	fb->flag  = 0;
+	fb->state = 0;
+
+#if 0
+	fb->fd = open(FBDEVICE, O_RDWR);
+	if(fb->fd < 0){
+		perror("open fb device");
+		free(fb);
+		return NULL;
+	}
+#endif
 
 	//operate the fb
-	ret = ioctl(fd, FBIOGET_FSCREENINFO, &fix_info);
+	ret = ioctl(fb->io_entry, FBIOGET_FSCREENINFO, &fb->fix_info);
 	if(ret < 0){
 		perror("ioctl");
-		close(fd);
-		return -1;
+		return NULL;
 	}
 	
-	ret = ioctl(fd, FBIOGET_VSCREENINFO, &v_info);
+	ret = ioctl(fb->io_entry, FBIOGET_VSCREENINFO, &fb->v_info);
 	if(ret < 0){
 		perror("ioctl");
-		close(fd);
-		return -1;
+		return NULL;
 	}
-
-
-
+//debug infomation
+#if 0	
 	printf("the start of memaddr is : 0x%lx, the length is :%d\n", fix_info.smem_start, fix_info.smem_len);
 	printf("\n %u \n %u \n  %u \n %u \n", v_info.xres_virtual, v_info.yres_virtual, v_info.xoffset, v_info.yoffset);
-
-//test for double buffer
-#if 0	
-//test how to make use of double buffer mode
-	//v_info.xoffset = 400;
-	v_info.yoffset = 300;
-	ret = ioctl(fd, FBIOPUT_VSCREENINFO, &v_info);
-	if(ret < 0){
-		perror("set offset error");
-		close(fd);
-		return -1;
-	}
-
 #endif
-	len = v_info.xres_virtual * v_info.yres_virtual * v_info.bits_per_pixel / 8 ;
-	pbuf = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-	if(pbuf == NULL){
+
+	fb->len = fb->v_info.xres_virtual * fb->v_info.yres_virtual * fb->v_info.bits_per_pixel / 8 ;
+	fb->pbuf = mmap(NULL, fb->len, PROT_READ | PROT_WRITE, MAP_SHARED, fb->io_entry, 0);
+	if(!fb->pbuf){
 		perror("mmap");
-		close(fd);	
-		return -1;
+		return NULL;
 	}
-//	printf("pbuf = %p\n", pbuf);
-/*
-mmap_end:
-	munmap((void *)pbuf, fix_info.smem_len);
-*/
-end:
-	return fd;
+
+	return fb;
 }
 
-void fb_close(int fd){
-	munmap((void *)pbuf, len);
-	close(fd);
+//change the double buffer
+//when the entire fb handler is designed, consider the flag and the state elements
+//the operation for logical bussiness could be seperated from the I/O operation
+int fb_doublebuffer_switch(FB_HANDLER * fb){
+	int ret;
+	fb->v_info.yoffset = fb->state? 0:600;
+	//fb->state = 0 for offset 0, then call this function to change  the offset for 600
+	
+	ret = ioctl(fb->io_entry, FBIOPUT_VSCREENINFO, &fb->v_info);
+	if(ret < 0){
+		perror("SWITCH ERROR");
+		return -1;
+	}
+	//flip when success
+	fb->state = fb->state ^ 0x1;
+
+	return 0;
+}
+
+void fb_free(FB_HANDLER * fb){
+	munmap((void *)fb->pbuf, fb->len);
+	close(fb->io_entry);
+	free(fb);
 }

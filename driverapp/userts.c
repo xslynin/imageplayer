@@ -45,6 +45,7 @@
 
 
 #include <userts.h>
+
 static int ts_app(struct ts_data ts){
 	//emmmm, maybe y is not important
 	if(ts.x <= 300){
@@ -64,50 +65,54 @@ int ts_routine(int fd){
 	//end at type 3 code 24 value 0
 	//abort those type don't equals 3
 	int res = 0;
-	struct input_event ev[3];
+	//the output of driver is 5 when press and 11 when unpress
+	struct input_event ev;
 	struct ts_data ts = {0};
 	while(1){
-		
-		memset(ev, '\0', 3 * sizeof(struct input_event));
-		if(read(fd, ev, 3 * sizeof(struct input_event)) < 0){
+//		LOG(DEBUG, "A routine");	
+		memset(&ev, '\0',  sizeof(struct input_event));
+		if(read(fd, &ev, sizeof(struct input_event)) < 0){
 			perror("Read");
 			break;
 		}
-		
+		if(ev.type == 3 && ev.code == 0){
+			ts.x = ev.value;
+			read(fd, &ev, sizeof(struct input_event));
+			ts.y = ev.value;
+			res = ts_app(ts);
+//			LOG(DEBUG, "hit!");
+//			read(fd, &ev, sizeof(struct input_event));
+			break;
+		}
+#if 0
 		//first for x axis
 		ts.x = ev[0].value;
 		ts.y = ev[1].value;
 		if( (ev[2].type == 1) && (ev[2].code == 330) && (ev[2].value == 1) ){
 			res = ts_app(ts);
+			LOG(DEBUG, "hit!");
+//			read(fd, ev, 16 * sizeof(struct input_event));
 			break;
 		}
-#if 0
-		if(ev.type == 3 && ev.value > 0){
-			if(ev.code == 0 && !(ts.cond & TS_XMASKCOND)){
-				//x axis
-				ts.x = ev.value;
-				ts.cond = ts.cond ^ TS_XMASKCOND;
-			}else if(ev.code == 1 && !(ts.cond & TS_YMASKCOND)){
-				//y axis
-				ts.y = ev.value;
-				ts.cond = ts.cond ^ TS_YMASKCOND;
-			}else if(ev.code == 24){
-				ts.cond = 0x3;//bit 1 bit 0 set to 1 for caculate
-			//	break;
-			}
-			
-			//handle happened when x y is fine but before the code 24
-			if(ts.cond == 0x3){
-				LOG(DEBUG, "x :%d y :%d",ts.x, ts.y);
-				res = ts_app(ts);
-				memset(&ts, 0, sizeof(struct ts_data));
-				break;
-			}
-				
-			//res = ts_app(ts);
-		}
-#endif	
+#endif
 	}
-
 	return res;
 }
+
+
+
+
+//RESERVED case for input test
+#if 0
+	fd_ts = open("/dev/input/event1", O_RDONLY);
+	if(fd_ts < 0){
+		perror("open ts device");
+		return 1;
+	}
+	while(1){
+		memset(&ev, 0, sizeof(struct input_event));
+		ret = read(fd_ts, &ev, sizeof(struct input_event));
+		LOG(DEBUG, "type %hd code %hd value:%d", ev.type, ev.code, ev.value);
+	}
+//	close(fd_ts);
+#endif
