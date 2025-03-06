@@ -4,6 +4,12 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <lib_png.h>
+#include <debug.h>
+#include <jpeglib.h>
+#include <string.h>
+
+
 
 struct bmp_handler {
 	unsigned int filesize;
@@ -19,6 +25,6 @@ struct bmp_handler {
 #include <userfb.h>
 
 
-int do_type_handle(const char * file_path);
+int do_type_handle(char * name);
 
 #endif

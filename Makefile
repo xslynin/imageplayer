@@ -15,10 +15,10 @@ OBJDUMP	= $(CROSS_COMPILE)objdump
 export AS LD CC CPP AR NM STRIP OBJCOPY OBJDUMP
 
 CFLAGS := -Wall -O2 -g
-CFLAGS += -I $(shell pwd)/include -I/opt/libdecode/include
+CFLAGS += -I $(shell pwd)/include -I/opt/libdec/include
 
 LDFLAGS :=
-#LDFLAGS := -ljpeg -lpng -lz -lpthread -L/opt/libdecode/lib
+LDFLAGS := -ljpeg -lpng -lz -pthread -L/opt/libdec/lib
 
 export CFLAGS LDFLAGS
 
@@ -31,17 +31,17 @@ TARGET := imageplayer
 obj-y += main.o
 
 # 添加顶层目录下的子文件夹（注意目录名后面加一个/）
-obj-y += fbapp/
-obj-y += core_api/
-#obj-y += image_manage/
+obj-y += driverapp/
+obj-y += decoder/
+obj-y += fmanager/
 
 all: 
 	make -C ./ -f $(TOPDIR)/Makefile.build
 	$(CC) $(LDFLAGS) -o $(TARGET) built-in.o
 
 cp:
-	rm -rf ~/nfsroot/rootfs/root/proj_imageplayer
-	cp ../proj_imageplayer/ ~/nfsroot/rootfs/root/ -rf
+	rm -rf ~/nfsroot/rootfs/root/imageplayer
+	cp ../imageplayer/ ~/nfsroot/rootfs/root/ -rf
 
 clean:
 	rm -f $(shell find -name "*.o")

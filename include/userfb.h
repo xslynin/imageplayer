@@ -13,22 +13,29 @@
 #include <bmp_decoder.h>
 
 
-#define FBDEVICE	"/dev/fb0"
-#define WIDTH 		1024 
-#define HEIGH 		600
+#define FBDEVICE			"/dev/fb0"
+#define IMAGES_WIDTH 		1024 
+#define IMAGES_HEIGH 		600
 
 
-#if 0
-struct fb_user_info {
-	int fd;
+typedef struct fb_handler{
+	int io_entry;
 	unsigned int * pbuf;
-};
-#endif
-//function in userfb.c
-void background_set(unsigned int width, unsigned int heigh, unsigned int color_argb);
-void image_set(const unsigned int * file);
-int fb_open();
-void fb_close(int fd);
+	unsigned long len;
+	struct fb_fix_screeninfo fix_info;
+	struct fb_var_screeninfo v_info;
+	int flag;			//no use for now
+	char state;
+}FB_HANDLER;
 
+
+
+//function in userfb.c
+//void background_set(unsigned int width, unsigned int heigh, unsigned int color_argb);
+void image_set(FB_HANDLER * fb, const unsigned int * file);
+void image_set2(FB_HANDLER * fb, unsigned char ** bitmap);
+FB_HANDLER * fb_init(int fd);
+int fb_doublebuffer_switch(FB_HANDLER * fb);
+void fb_free(FB_HANDLER * fb);
 
 #endif

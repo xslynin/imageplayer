@@ -1,4 +1,5 @@
 #include <bmp_decoder.h>
+#include <debug.h>
 
 unsigned int * core_handle_bmp(const struct bmp_handler * data){
 	//in this file , i only consider a well handle file to decode
@@ -30,8 +31,8 @@ unsigned int * core_handle_bmp(const struct bmp_handler * data){
 	//column
 //	printf("TEST %p\n", row_color);
 	data_cp = data->image_data;
-	printf("TEST %p\n", data_cp);
-
+	LOG(DEBUG,"TEST %p\n", data_cp);
+	
 	for(j = 1;j < data->image_heigh;j++){
 		//one row cycle
 		//before fill the data, locate the pointer
