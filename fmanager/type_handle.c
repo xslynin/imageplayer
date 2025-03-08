@@ -92,7 +92,7 @@ error:
 	return NULL;
 }
 
-static unsigned int * jpg_lib_handle(const char * file_path){
+static unsigned int * jpg_lib_handle(const char * file_path, struct img_file * obj){
 	FILE * infile;
 	JSAMPARRAY buffer;
 	int row_stride,i;
@@ -154,10 +154,9 @@ static unsigned int * jpg_lib_handle(const char * file_path){
 	return bitmap;
 }
 
-static unsigned int * png_lib_handle(const char * file_path){
-//	int i,j;
-	unsigned int * bitmap = NULL;
-
+static unsigned int * png_lib_handle(const char * file_path, struct img_file * obj){
+	int i,j;
+	unsigned int * bitmap;
 	png_structp png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL); 
 	if (!png_ptr) 
 		return NULL;
@@ -185,32 +184,31 @@ static unsigned int * png_lib_handle(const char * file_path){
 	png_read_png(png_ptr, info_ptr, png_transforms, NULL);
 
 	//handle the png_ptr to bitmap
-	LOG(DEBUG, "width %lu height %lu bitdeep %u rowbytes %lu bpp %u", info_ptr->width, info_ptr->height, info_ptr->bit_depth,info_ptr->rowbytes, info_ptr->pixel_depth);
+//	LOG(DEBUG, "width %lu height %lu bitdeep %u rowbytes %lu bpp %u", info_ptr->width, info_ptr->height, info_ptr->bit_depth,info_ptr->rowbytes, info_ptr->pixel_depth);
 
 	//now we know the row pointer gives no 00 for align
-#if 0	
+#if 1
 	bitmap = (unsigned int *)malloc(info_ptr->height * info_ptr->width * 4);
+	if(!bitmap)
+		goto end;
 	//printf("%ld",(unsigned int)info_ptr->height * info_ptr->width * sizeof(unsigned int));
-	for(i=0;i < info_ptr->height * info_ptr->width;){
-		for(j = 0;j < info_ptr->width;){
-			bitmap[i] =( info_ptr->row_pointers[i % 1024][j*3]<<16)|  (info_ptr->row_pointers[i % 1024][j*3 + 1] <<8)| (info_ptr->row_pointers[i % 1024][j*3 + 2]);
+	for(i=0;i < info_ptr->height;i++){
+		for(j = 0;j < info_ptr->width;j++){
+			bitmap[i*1024 + j] =( info_ptr->row_pointers[i % 1024][j*3]<<16)|  (info_ptr->row_pointers[i % 1024][j*3 + 1] <<8)| (info_ptr->row_pointers[i % 1024][j*3 + 2]);
 			//LOG(DEBUG, "0x%x ", bitmap[i]);
-			j++;
-			i++;
-			LOG(DEBUG, "pixel %d ", j);
+//			LOG(DEBUG, "pixel %d ", i*1024 + j);
 		}
-		LOG(DEBUG, "row %d done", i + 1);
+//		LOG(DEBUG, "row %d done", i + 1);
 	}
 #endif
-	//image_set2((unsigned char **)info_ptr->row_pointers);
 
-
+end:
+//	image_set2((unsigned char **)info_ptr->row_pointers);
 
 	png_destroy_read_struct(&png_ptr, &info_ptr, png_infopp_NULL);
 
 	/* Close the file */
 	fclose(fp);
-
 	return bitmap;
 }
 
@@ -219,8 +217,7 @@ int do_type_handle(char * name){
 	int n, fd;
 #if 0
 	unsigned int *bitmap = NULL;
-	struct bmp_handler * bmp = NULL;
-	//struct jpg_handler * jpg = NULL;
+		//struct jpg_handler * jpg = NULL;
 #endif
 	//open image file
 	char * path =malloc(256 * sizeof(char));
@@ -235,47 +232,72 @@ int do_type_handle(char * name){
 	}
 	
 	n = head_handle(fd);
-	
+	close(fd);
+	free(path);	
 	return n;
-//	lseek(fd, 0, SEEK_SET);
+}
+
+
+
+int decoder_handle(struct img_file * obj){
+	int fd;
+	char path[256];
+	unsigned int * bitmap;
+	struct bmp_handler * bmp = NULL;
+	
+	if(obj->pspecial)
+		return 0;
+	memset(path, '\0', 256);
+	strcat(path, "./image/");
+	strcat(path, obj->f_name);
+
+	//fd = open(path, O_RDONLY);
+	
+	switch(obj->type){
+		case USER_TYPE_BMP:
+			fd  = open(path, O_RDONLY); 
+			if(fd < 0){
+				printf("error when open the bmp file\n");
+				break;	
+			}
+			bmp = bmp_header_handle(fd);
+			bitmap = core_handle_bmp(bmp);
+			free(bmp->image_data);
+			free(bmp);
+			if(!bitmap)
+				printf("error when getting bitmap in bmp decoder\n");
+			obj->pspecial = (void *) bitmap;
+			break;
+		case USER_TYPE_JPG:
+			bitmap = jpg_lib_handle(path, obj);
+			//bmp and jpg output unsigned int * bitmap
+			//while png output unsigned char ** for now
+			obj->pspecial = (void *) bitmap;
+			//free(bitmap);
+			break;
+		case USER_TYPE_PNG:
+			//png
+			bitmap = png_lib_handle(path, obj);
+			obj->pspecial = (void *) bitmap;
+			//			free(bitmap);
+			break;
+		default:
+			perror("Wrong Image Type in this application :)");
+			//display_error_message(err_code);  if design such a function
+			return -1;
+	}
+//	LOG(DEBUG, "%s decode fine , pspecial available!", obj->f_name);
+end:
+	return 0;
+}
 	/*
 	 1 means bmp image
 	 2 means jpg image
 	 3 means png image
 	 */
 #if 0
-	switch(n){
-		case 1:
-	//well , there I come up to a sense that this function call a special image decode function, so what should hanpen?	
-	//maybe return a image array? maybe a file like test.h? maybe other? as least now I consider a cache file for buffer	
-			bmp = bmp_header_handle(fd);
-			bitmap = core_handle_bmp(bmp);
-			free(bmp->image_data);
-			free(bmp);
-			if(bitmap != NULL)
-				image_set(bitmap);
-			else
-				printf("error when getting bitmap in bmp decoder\n");
-			free(bitmap);
-			break;
-		case 2:
-			bitmap = jpg_lib_handle(path);
-			image_set(bitmap);
-			free(bitmap);
-			break;
-		case 3:
-			//png
-			png_lib_handle(path);
-			free(bitmap);
-			break;
-		default:
-			perror("Wrong Image Type in this application :)");
-			free(path);
-			//display_error_message(err_code);  if design such a function
-			return -1;
-	}
+	
 #endif
-}
 
 
 

@@ -20,10 +20,15 @@ static void img_list_register(struct img_file img_list, handle){
 
 //#define tricky(x,size)	(size)?tricky(x->next, size - 1):x->next
 void fmanage_load(FILE_LIST * obj){
+	int i;
+	struct img_file * cp = obj->head;
+	for(i = 0;i < obj->size;i++){
+//		thread_pool_add_task();
+//		decode_handle(cp);
+		cp = cp->next;
+	}
 
-
-
-
+	
 }
 
 FILE_LIST * fmanage_init(const char * dir_path){
@@ -57,11 +62,12 @@ FILE_LIST * fmanage_init(const char * dir_path){
 #endif
 		int n = do_type_handle(entry->d_name);
 		if(n > 0){
-			LOG(DEBUG, "%s is a image file", entry->d_name);
+//			LOG(DEBUG, "%s is a image file", entry->d_name);
 			struct img_file *temp = (struct img_file*) malloc(sizeof(struct img_file));
 			if(!temp) printf("%s create struct fail when malloc\n",entry->d_name);
 			memcpy(temp->f_name,entry->d_name, 256);
-			temp->type = n; 
+			temp->type = n;
+		   	temp->pspecial = NULL;	
 			if(!file_list->head){
 				file_list->head = temp;
 			}else{
@@ -72,7 +78,7 @@ FILE_LIST * fmanage_init(const char * dir_path){
 			file_list->size += 1;
 //			LOG(DEBUG, "!!!!!!!%s!!!!!!!!!", file_list->head->f_name);	
 		}else{
-			LOG(DEBUG, "%s isn't a correct image file", entry->d_name);
+//			LOG(DEBUG, "%s isn't a correct image file", entry->d_name);
 		}
 	}
 	//make a loop connect

@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <thread_pool.h>
-#include <type_handle.h>
 #include <userfb.h>
 #include <debug.h>
 #include <userts.h>
-#include <img_manage.h>
+//#include <img_manage.h>
+#include <type_handle.h>
+
 //let's do a complete conclusion
 //first, we initate a thread pool for image decompress assignment and till now we don't actually ensure the need of process, but at lease we realize some threads
 //second, fb should open, return the related resource to control
@@ -26,16 +27,18 @@ int main(){
 	int ret, fd;
 	FILE_LIST * img_filelist;
 	FB_HANDLER * fb;
-	
-	ret = 0;
-	//separate the thread pool to child progress
+	struct img_file * cp;
 
+	ret = 0;
+
+#if 0
 	if(thread_pool_init() ){
 		printf("init thread pool wrong!:( \n");
 		ret = -1;
 		goto err_thread_pool;;
 	}	
-	
+#endif
+
 	//fb and touch should be parent progress
 	fd = open(FB_DF,O_RDWR);
 	if(fd < 0)
@@ -83,34 +86,54 @@ int main(){
 		perror("fmanager module error");
 		goto err_fmanage;
 	}
-	
-	struct img_file * cp = img_filelist->head;
-	while(1){
-//		display current image linklist points to
-		
-//		do_type_handle(img_file->f_name);
-		LOG(DEBUG, "%s", cp->f_name);
-#if 0
-		//		fresh the double buffer for two direction
-		listening the touch screen for img change
-		if	pre   ... load the remaining half data //there consider one more buffer in ram, that is, keep a img size's ram to save the half data don't be load 
-						call fb api to change the windows for display
-							
-		elif next ... load the remaining half data
+	cp = img_filelist->head;
 
-		elif close ... break;
+#if 1 //at beginning   set the image
+	decoder_handle(cp);	
+//	free(cp->pspecial);
+	decoder_handle(cp->pre);
+	decoder_handle(cp->next);
+	image_set(fb, cp);
 #endif
-		ret = ts_routine(fd);
+
+
+	while(1){
+	//	LOG(DEBUG, "%s", cp->f_name);
+
+		
+ignore_loop:
+		ret = ts_routine(fd);// waiting for the change
 		if(ret == TS_LEFT){
-			LOG(DEBUG, "left");
+	//		LOG(DEBUG, "left");
+//			fb->state ^= 0x2;// pre image fill the bottom half set
+			fb->state &= ~(1 << 1);
+			free(cp->next->pspecial);
+			cp->next->pspecial = NULL;
+//			LOG(DEBUG, "after left and free %p, we got %p %p", cp->next->pspecial, cp-);
 			cp = cp->pre;
 		}else if(ret == TS_RIGHT){
-			LOG(DEBUG, "right");
+	//		LOG(DEBUG, "right");
+			fb->state |= 1 << 1;
+			free(cp->pre->pspecial);
+			cp->pre->pspecial = NULL;
 			cp = cp->next;
 		}else if(ret == TS_CLOSE){
-			LOG(DEBUG, "CLOSE");
+	//		LOG(DEBUG, "CLOSE");
+			background_set(1024, 1200, 0x00000000, fb);
 			break;
+		}else{
+			//ret == TS_IGNORE
+			goto ignore_loop;
 		}
+		
+		decoder_handle(cp->pre);
+		decoder_handle(cp->next);
+		LOG(DEBUG, "pre%p\n cur%p\n next%p", cp->pre->pspecial, cp->pspecial, cp->next->pspecial);		
+		//now it's time to change
+		image_before_show(fb, cp);//input the newest to show
+		fb_switch(fb);//actual function for displaying the image
+		image_preload(fb, cp);
+
 		//LOG(DEBUG, "-----------a click");
 	}
 #endif
@@ -126,10 +149,11 @@ err_ts:
 	close(fd);	
 err_fb:
 	fb_free(fb);
+
+#if 0
 err_thread_pool:	
 	thread_pool_destroy();
-
-	
+#endif
 	
 	return ret;
 

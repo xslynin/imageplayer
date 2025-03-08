@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <debug.h>
-#include <type_handle.h>
 
 #define MAX_FILENAME 256
 //#define MAX_IMAGEARR 100
@@ -17,7 +16,9 @@ struct img_file {
 	char f_name[MAX_FILENAME];
 	int  type;
 	char cache[MAX_FILENAME];
-	char resolution[10];// 1234x4321
+//	char resolution[10];// 1234x4321
+	int width;
+	int heigh;
 	void * pspecial;
 	struct img_file *next;
 	struct img_file *pre;
@@ -39,8 +40,11 @@ enum IMG_TYPE{
 
 //function of imageloop.c
 FILE_LIST * fmanage_init(const char * dir_path);
+void fmanage_load(FILE_LIST * obj);
 void fm_free(FILE_LIST * file_list);
 
+
+#include <type_handle.h>
 
 
 

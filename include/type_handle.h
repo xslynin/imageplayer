@@ -8,7 +8,7 @@
 #include <debug.h>
 #include <jpeglib.h>
 #include <string.h>
-
+#include <img_manage.h>
 
 
 struct bmp_handler {
@@ -22,9 +22,9 @@ struct bmp_handler {
 
 
 #include <bmp_decoder.h>
-#include <userfb.h>
+//#include <userfb.h>
 
 
 int do_type_handle(char * name);
-
+int decoder_handle(struct img_file * obj);
 #endif
